@@ -73,21 +73,6 @@ pub mod multisig {
         Ok(())
     }
 
-    // // Approves a transaction on behalf of an owner of the multisig.
-    // pub fn approve(ctx: Context<Approve>) -> Result<()> {
-    //     let owner_index = ctx
-    //         .accounts
-    //         .multisig
-    //         .owners
-    //         .iter()
-    //         .position(|a| a == ctx.accounts.owner.key)
-    //         .ok_or(ErrorCode::InvalidOwner)?;
-
-    //     ctx.accounts.transaction.signers[owner_index] = true;
-
-    //     Ok(())
-    // }
-
     // Sets the owners field on the multisig. The only way this can be invoked
     // is via a recursive call from execute_transaction -> set_owners.
     pub fn set_owners(ctx: Context<Auth>, owners: Vec<Pubkey>) -> Result<()> {
@@ -115,7 +100,7 @@ pub mod multisig {
         Ok(())
     }
 
-    // Executes the given transaction if threshold owners have signed it.
+    // Approve and Executes the given transaction if threshold owners have signed it.
     pub fn approve(ctx: Context<Approve>) -> Result<()> {
         let owner_index = ctx
             .accounts
@@ -189,17 +174,6 @@ pub struct CreateTransaction<'info> {
     proposer: AccountInfo<'info>,
     rent: Sysvar<'info, Rent>,
 }
-
-// #[derive(Accounts)]
-// pub struct Approve<'info> {
-//     #[account("multisig.owner_set_seqno == transaction.owner_set_seqno")]
-//     multisig: ProgramAccount<'info, Multisig>,
-//     #[account(mut, belongs_to = multisig)]
-//     transaction: ProgramAccount<'info, Transaction>,
-//     // One of the multisig owners. Checked in the handler.
-//     #[account(signer)]
-//     owner: AccountInfo<'info>,
-// }
 
 #[derive(Accounts)]
 pub struct Auth<'info> {

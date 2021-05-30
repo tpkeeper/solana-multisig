@@ -38,7 +38,7 @@ describe("multisig", () => {
 
 
     //creste multisig
-    const threshold = new anchor.BN(2);
+    const threshold = new anchor.BN(3);
     await program.rpc.createMultisig(owners, threshold, nonce, {
       accounts: {
         multisig: multisig.publicKey,
@@ -56,7 +56,7 @@ describe("multisig", () => {
 
     let multisigAccount = await program.account.multisig(multisig.publicKey);
     assert.strictEqual(multisigAccount.nonce, nonce);
-    assert.ok(multisigAccount.threshold.eq(new anchor.BN(2)));
+    assert.ok(multisigAccount.threshold.eq(new anchor.BN(3)));
     assert.deepStrictEqual(multisigAccount.owners, owners);
     assert.ok(multisigAccount.ownerSetSeqno === 0);
 
@@ -123,16 +123,6 @@ describe("multisig", () => {
     assert.deepStrictEqual(txAccount.didExecute, false);
     assert.ok(txAccount.ownerSetSeqno === 0);
 
-    // // Other owner approves transactoin.
-    // await program.rpc.approve({
-    //   accounts: {
-    //     multisig: multisig.publicKey,
-    //     transaction: transaction.publicKey,
-    //     owner: ownerB.publicKey,
-    //   },
-    //   signers: [ownerB],
-    // });
-
     // Now that we've reached the threshold, send the transactoin.
     await program.rpc.approve({
       accounts: {
@@ -166,12 +156,38 @@ describe("multisig", () => {
       signers: [ownerB]
     });
 
-    // multisigAccount = await program.account.multisig(multisig.publicKey);
+    await program.rpc.approve({
+      accounts: {
+        multisig: multisig.publicKey,
+        multisigSigner,
+        transaction: transaction.publicKey,
+        owner: ownerC.publicKey,
+      },
+      remainingAccounts: [
+        {
+          pubkey: multisigSigner,
+          isWritable: true,
+          isSigner: false,
+        },
+        {
+          pubkey: ownerA.publicKey,
+          isWritable: true,
+          isSigner: false,
+        },
+        {
+          pubkey: anchor.web3.SystemProgram.programId,
+          isWritable: false,
+          isSigner: false,
+        },
 
-    // assert.strictEqual(multisigAccount.nonce, nonce);
-    // assert.ok(multisigAccount.threshold.eq(new anchor.BN(2)));
-    // assert.deepStrictEqual(multisigAccount.owners, newOwners);
-    // assert.ok(multisigAccount.ownerSetSeqno === 1);
+        {
+          pubkey: program.programId,
+          isWritable: false,
+          isSigner: false,
+        }],
+      signers: [ownerC]
+    });
+
   });
 });
 
