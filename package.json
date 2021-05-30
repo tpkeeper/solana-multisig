@@ -1,0 +1,27 @@
+{
+  "name": "multisigremote",
+  "version": "1.0.0",
+  "description": "An example of a multisig to execute arbitrary Solana transactions.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/project-serum/multisig.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/project-serum/multisig/issues"
+  },
+  "homepage": "https://github.com/project-serum/multisig#readme",
+  "dependencies": {
+    "@project-serum/anchor": "^0.6.1-beta.1",
+    "assert": "^2.0.0",
+    "mocha": "^8.4.0"
+  }
+}
