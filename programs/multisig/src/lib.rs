@@ -37,7 +37,6 @@ pub mod multisig {
         multisig.owners = owners;
         multisig.threshold = threshold;
         multisig.nonce = nonce;
-        multisig.owner_set_seqno = 0;
         Ok(())
     }
 
@@ -68,35 +67,7 @@ pub mod multisig {
         tx.signers = signers;
         tx.multisig = *ctx.accounts.multisig.to_account_info().key;
         tx.did_execute = false;
-        tx.owner_set_seqno = ctx.accounts.multisig.owner_set_seqno;
 
-        Ok(())
-    }
-
-    // Sets the owners field on the multisig. The only way this can be invoked
-    // is via a recursive call from execute_transaction -> set_owners.
-    pub fn set_owners(ctx: Context<Auth>, owners: Vec<Pubkey>) -> Result<()> {
-        let multisig = &mut ctx.accounts.multisig;
-
-        if (owners.len() as u64) < multisig.threshold {
-            multisig.threshold = owners.len() as u64;
-        }
-
-        multisig.owners = owners;
-        multisig.owner_set_seqno += 1;
-
-        Ok(())
-    }
-
-    // Changes the execution threshold of the multisig. The only way this can be
-    // invoked is via a recursive call from execute_transaction ->
-    // change_threshold.
-    pub fn change_threshold(ctx: Context<Auth>, threshold: u64) -> Result<()> {
-        if threshold > ctx.accounts.multisig.owners.len() as u64 {
-            return Err(ErrorCode::InvalidThreshold.into());
-        }
-        let multisig = &mut ctx.accounts.multisig;
-        multisig.threshold = threshold;
         Ok(())
     }
 
@@ -176,19 +147,7 @@ pub struct CreateTransaction<'info> {
 }
 
 #[derive(Accounts)]
-pub struct Auth<'info> {
-    #[account(mut)]
-    multisig: ProgramAccount<'info, Multisig>,
-    #[account(signer, seeds = [
-        multisig.to_account_info().key.as_ref(),
-        &[multisig.nonce],
-    ])]
-    multisig_signer: AccountInfo<'info>,
-}
-
-#[derive(Accounts)]
 pub struct Approve<'info> {
-    #[account("multisig.owner_set_seqno == transaction.owner_set_seqno")]
     multisig: ProgramAccount<'info, Multisig>,
     #[account(seeds = [
         multisig.to_account_info().key.as_ref(),
@@ -207,7 +166,6 @@ pub struct Multisig {
     owners: Vec<Pubkey>,
     threshold: u64,
     nonce: u8,
-    owner_set_seqno: u32,
 }
 
 #[account]
@@ -224,8 +182,6 @@ pub struct Transaction {
     signers: Vec<bool>,
     // Boolean ensuring one time execution.
     did_execute: bool,
-    // Owner set sequence number.
-    owner_set_seqno: u32,
 }
 
 impl From<&Transaction> for Instruction {

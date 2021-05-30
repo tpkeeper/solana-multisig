@@ -58,10 +58,6 @@ describe("multisig", () => {
     assert.strictEqual(multisigAccount.nonce, nonce);
     assert.ok(multisigAccount.threshold.eq(new anchor.BN(3)));
     assert.deepStrictEqual(multisigAccount.owners, owners);
-    assert.ok(multisigAccount.ownerSetSeqno === 0);
-
-
-
 
     const accounts = [
       {
@@ -112,8 +108,6 @@ describe("multisig", () => {
       signers: [ownerA],
     });
 
-
-
     const txAccount = await program.account.transaction(transaction.publicKey);
 
     assert.ok(txAccount.programId.equals(pid));
@@ -121,7 +115,6 @@ describe("multisig", () => {
     assert.deepStrictEqual(txAccount.data, data);
     assert.ok(txAccount.multisig.equals(multisig.publicKey));
     assert.deepStrictEqual(txAccount.didExecute, false);
-    assert.ok(txAccount.ownerSetSeqno === 0);
 
     // Now that we've reached the threshold, send the transactoin.
     await program.rpc.approve({
