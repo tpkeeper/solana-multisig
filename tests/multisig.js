@@ -78,6 +78,11 @@ describe("multisig", () => {
       toPubkey: ownerA.publicKey,
       lamports: new anchor.BN(1000000000),
     }).data
+    const data2 = anchor.web3.SystemProgram.transfer({
+      fromPubkey: multisigSigner,
+      toPubkey: ownerA.publicKey,
+      lamports: new anchor.BN(100000000),
+    }).data
 
     await transfer(provider, localAccount.publicKey, multisigSigner, localAccount);
 
@@ -98,7 +103,7 @@ describe("multisig", () => {
 
 
     //create transaction 
-    await program.rpc.createTransaction(pid, accounts, data, {
+    await program.rpc.createTransaction([pid,pid], [accounts,accounts], [data,data2], {
       accounts: {
         multisig: multisig.publicKey,
         transaction: transaction.publicKey,
@@ -110,9 +115,9 @@ describe("multisig", () => {
 
     const txAccount = await program.account.transaction(transaction.publicKey);
 
-    assert.ok(txAccount.programId.equals(pid));
-    assert.deepStrictEqual(txAccount.accounts, accounts);
-    assert.deepStrictEqual(txAccount.data, data);
+    assert.ok(txAccount.programId[0].equals(pid));
+    assert.deepStrictEqual(txAccount.accounts[0], accounts);
+    assert.deepStrictEqual(txAccount.data[0], data);
     assert.ok(txAccount.multisig.equals(multisig.publicKey));
     assert.deepStrictEqual(txAccount.didExecute, false);
 
@@ -191,7 +196,7 @@ async function transfer(provider, from, to, authority) {
   const instructions = [anchor.web3.SystemProgram.transfer({
     fromPubkey: from,
     toPubkey: to,
-    lamports: new anchor.BN(2000000000),
+    lamports: new anchor.BN(3000000000),
   }),
   ]
 

@@ -1,5 +1,13 @@
 # Multisig
-forked from project-serum/multisig and optimized some logic.
+forked from [project-serum/multisig](https://github.com/project-serum/multisig).
+
+changed here:
+
+move `execute_transaction` into `approve` for reduce the number tx.
+remove `set_owners` `change_threshold` for that we can recreate a new mutisig accout.
+add support for multi instructions in one multisig tx.
+
+---
 
 An example of a multisig to execute arbitrary Solana transactions.
 
@@ -26,19 +34,10 @@ signed.
 
 ## Deployments
 
-* Mainnet: `A9HAbnCwoD6f2NkZobKFf6buJoN9gUVVvX5PoUnDHS6u`
-* Devnet: `F3Uf5F61dmht1xuNNNkk3jnzj82TY56vVjVEhZALRkN`
 
 ## Upgrade Authorities
 
 The program is upgradeable with self-referential multisigs as the authorities.
-
-* Mainnet
-  * Multisig: `3uztpEgUmvirDBYRXgDamUDZiU5EcgTwArQ2pULtHJPC`
-  * PDA: `2bXuJdSb4AeAZTBY8NDtYnSbxXGjgjkMHw9dPS9gjK9r`
-* Devnet
-  * Multisig: `FHY7K5SQvp7dUmGScjLih3hcwJe9GZ8cTShXkdeQJzRD`
-  * PDA: `5H4kCYbxpyKSb3BaL4qZNSJyqCLhs2aYCRTiUQTzQ7Rp`
 
 Note that the multisig is a program account and PDA is the program-derived-address,
 i.e., the signing address that can be used as the "authority" by other programs.

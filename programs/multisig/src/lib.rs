@@ -44,10 +44,13 @@ pub mod multisig {
     // which must be one of the owners of the multisig.
     pub fn create_transaction(
         ctx: Context<CreateTransaction>,
-        pid: Pubkey,
-        accs: Vec<TransactionAccount>,
-        data: Vec<u8>,
+        pid: Vec<Pubkey>,
+        accs: Vec<Vec<TransactionAccount>>,
+        data: Vec<Vec<u8>>,
     ) -> Result<()> {
+        if pid.len() != accs.len() || pid.len() != data.len() {
+            return Err(ErrorCode::ParamLength.into());
+        }
         let owner_index = ctx
             .accounts
             .multisig
@@ -101,25 +104,30 @@ pub mod multisig {
         }
 
         // Execute the transaction signed by the multisig.
-        let mut ix: Instruction = (&*ctx.accounts.transaction).into();
-        ix.accounts = ix
-            .accounts
-            .iter()
-            .map(|acc| {
-                let mut acc = acc.clone();
-                if &acc.pubkey == ctx.accounts.multisig_signer.key {
-                    acc.is_signer = true;
-                }
-                acc
-            })
-            .collect();
+        let mut ixs: Vec<Instruction> = (&*ctx.accounts.transaction).into();
+        for ix in ixs.iter_mut() {
+            ix.accounts = ix
+                .accounts
+                .iter()
+                .map(|acc| {
+                    let mut acc = acc.clone();
+                    if &acc.pubkey == ctx.accounts.multisig_signer.key {
+                        acc.is_signer = true;
+                    }
+                    acc
+                })
+                .collect();
+        }
+
         let seeds = &[
             ctx.accounts.multisig.to_account_info().key.as_ref(),
             &[ctx.accounts.multisig.nonce],
         ];
         let signer = &[&seeds[..]];
         let accounts = ctx.remaining_accounts;
-        solana_program::program::invoke_signed(&ix, &accounts, signer)?;
+        for ix in ixs.iter() {
+            solana_program::program::invoke_signed(ix, &accounts, signer)?;
+        }
 
         // Burn the transaction to ensure one time use.
         ctx.accounts.transaction.did_execute = true;
@@ -173,24 +181,28 @@ pub struct Transaction {
     // The multisig account this transaction belongs to.
     multisig: Pubkey,
     // Target program to execute against.
-    program_id: Pubkey,
+    program_id: Vec<Pubkey>,
     // Accounts requried for the transaction.
-    accounts: Vec<TransactionAccount>,
+    accounts: Vec<Vec<TransactionAccount>>,
     // Instruction data for the transaction.
-    data: Vec<u8>,
+    data: Vec<Vec<u8>>,
     // signers[index] is true iff multisig.owners[index] signed the transaction.
     signers: Vec<bool>,
     // Boolean ensuring one time execution.
     did_execute: bool,
 }
 
-impl From<&Transaction> for Instruction {
-    fn from(tx: &Transaction) -> Instruction {
-        Instruction {
-            program_id: tx.program_id,
-            accounts: tx.accounts.clone().into_iter().map(Into::into).collect(),
-            data: tx.data.clone(),
+impl From<&Transaction> for Vec<Instruction> {
+    fn from(tx: &Transaction) -> Vec<Instruction> {
+        let mut instructions: Vec<Instruction> = Vec::new();
+        for (i, _pid) in tx.program_id.iter().enumerate() {
+            instructions.push(Instruction {
+                program_id: tx.program_id[i],
+                accounts: tx.accounts[i].clone().into_iter().map(Into::into).collect(),
+                data: tx.data[i].clone(),
+            })
         }
+        instructions
     }
 }
 
@@ -226,4 +238,6 @@ pub enum ErrorCode {
     AlreadyExecuted,
     #[msg("Threshold must be less than or equal to the number of owners.")]
     InvalidThreshold,
+    #[msg("program id account data must have same length")]
+    ParamLength,
 }
